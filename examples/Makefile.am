@@ -187,7 +187,7 @@ ptlsserver_SOURCES = server.cc server.h ${SERVER_SRCS} \
 endif # ENABLE_EXAMPLE_PICOTLS
 
 if ENABLE_EXAMPLE_WOLFSSL
-noinst_PROGRAMS += wsslclient wsslserver h09wsslclient h09wsslserver
+noinst_PROGRAMS += wsslclient wsslserver
 
 wsslclient_CPPFLAGS = ${AM_CPPFLAGS} @WOLFSSL_CFLAGS@ -DWITH_EXAMPLE_WOLFSSL
 wsslclient_LDADD = ${LDADD} \
@@ -228,7 +228,7 @@ h09wsslserver_SOURCES = h09server.cc h09server.h ${SERVER_SRCS} \
 endif # ENABLE_EXAMPLE_WOLFSSL
 
 if ENABLE_EXAMPLE_OSSL
-noinst_PROGRAMS += osslclient osslserver
+noinst_PROGRAMS += osslclient osslserver h09osslclient h09osslserver
 
 osslclient_CPPFLAGS = ${AM_CPPFLAGS} \
 	@JEMALLOC_CFLAGS@ @OPENSSL_CFLAGS@ -DWITH_EXAMPLE_OSSL
@@ -245,6 +245,24 @@ osslclient_SOURCES = client.cc client.h ${CLIENT_SRCS} \
 osslserver_CPPFLAGS = ${osslclient_CPPFLAGS}
 osslserver_LDADD = ${osslclient_LDADD}
 osslserver_SOURCES = server.cc server.h ${SERVER_SRCS} \
+	tls_server_context_ossl.cc tls_server_context_ossl.h \
+	tls_server_session_ossl.cc tls_server_session_ossl.h \
+	tls_session_base_ossl.cc tls_session_base_ossl.h \
+	util_openssl.cc
+
+h09osslclient_CPPFLAGS = ${osslclient_CPPFLAGS}
+h09osslclient_LDADD = ${osslclient_LDADD}
+h09osslclient_SOURCES = h09client.cc h09client.h ${CLIENT_SRCS} \
+	tls_client_context_ossl.cc tls_client_context_ossl.h \
+	tls_client_session_ossl.cc tls_client_session_ossl.h \
+	tls_session_base_ossl.cc tls_session_base_ossl.h \
+	util_openssl.cc
+
+h09osslserver_CPPFLAGS = ${osslclient_CPPFLAGS} \
+	-I$(top_srcdir)/third-party
+h09osslserver_LDADD = ${osslclient_LDADD} \
+	$(top_builddir)/third-party/libhttp-parser.la
+h09osslserver_SOURCES = h09server.cc h09server.h ${SERVER_SRCS} \
 	tls_server_context_ossl.cc tls_server_context_ossl.h \
 	tls_server_session_ossl.cc tls_server_session_ossl.h \
 	tls_session_base_ossl.cc tls_session_base_ossl.h \
