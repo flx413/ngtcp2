@@ -30,6 +30,10 @@ cmake_policy(SET CMP0063 NEW)
 # XXX using 0.1.90 instead of 0.2.0-DEV
 project(ngtcp2 VERSION 1.12.0)
 
+set(CMAKE_PREFIX_PATH 
+  /home/fengxiaole/ngtcp2/openssl-OpenSSL_1_1_1w-quic/build
+  /home/fengxiaole/ngtcp2/nghttp3/build)
+
 # See versioning rule:
 #  https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 set(LT_CURRENT  19)
@@ -378,6 +382,7 @@ endif()
 add_subdirectory(crypto)
 add_subdirectory(third-party)
 if(NOT ENABLE_LIB_ONLY)
+  message(STATUS "build example")
   add_subdirectory(examples)
 endif()
 

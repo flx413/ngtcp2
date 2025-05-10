@@ -37,3 +37,7 @@ test-driver
 
 # idea settings
 .idea
+
+# vscode
+.cache
+build
