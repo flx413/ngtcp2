@@ -24,6 +24,7 @@
  */
 #include "debug.h"
 
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <cassert>
@@ -46,6 +47,8 @@ auto randgen = util::make_mt19937();
 namespace {
 auto *outfile = stderr;
 } // namespace
+
+static FILE *sg_log_file = nullptr;
 
 int handshake_completed(ngtcp2_conn *conn, void *user_data) {
   fprintf(outfile, "QUIC handshake has completed\n");
@@ -307,6 +310,52 @@ std::string_view secret_title(ngtcp2_encryption_level level) {
     assert(0);
     abort();
   }
+}
+
+void log_printf_to_file(void *user_data, const char *fmt, ...) {
+  static bool had_open_file = false;
+  if (!sg_log_file && !had_open_file) {
+    had_open_file = true;
+    sg_log_file = fopen("./ngtcp2_client.log", "w+");
+  }
+  if (!sg_log_file) {
+    return;
+  }
+
+  char temp_time[128] = { 0 };
+ ;
+  struct timeval time;
+  gettimeofday(&time, nullptr);
+  struct tm * tm_t = localtime(&time.tv_sec);
+  int ret = snprintf(temp_time, sizeof(temp_time), 
+            "%d-%02d-%02d %.1f %02d:%02d:%02d.%03d", 
+                    1900 + tm_t->tm_year, 
+                    1 + tm_t->tm_mon, 
+                    tm_t->tm_mday,
+                    tm_t->tm_gmtoff / 3600.0f, 
+                    tm_t->tm_hour, 
+                    tm_t->tm_min, 
+                    tm_t->tm_sec,
+                    (int)(time.tv_usec / 1000));
+  assert(ret >= 0);
+  
+  va_list ap;
+  std::array<char, 4096> buf;
+  ret = snprintf(buf.data(), sizeof(buf), "[%s] ", temp_time);
+  assert(ret >= 0);
+
+  va_start(ap, fmt);
+  auto n = vsnprintf(buf.data() + ret, buf.size(), fmt, ap);
+  va_end(ap);
+
+  if (static_cast<size_t>(n) >= buf.size()) {
+    n = buf.size() - 1;
+  }
+
+  buf[n++] = '\n';
+
+  while (write(fileno(sg_log_file), buf.data(), n) == -1 && errno == EINTR)
+    ;
 }
 
 } // namespace debug

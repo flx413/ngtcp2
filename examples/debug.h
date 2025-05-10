@@ -120,6 +120,9 @@ void print_http_settings(const nghttp3_settings *settings);
 
 std::string_view secret_title(ngtcp2_encryption_level level);
 
+
+void log_printf_to_file(void *user_data, const char *fmt, ...);
+
 } // namespace debug
 
 } // namespace ngtcp2
