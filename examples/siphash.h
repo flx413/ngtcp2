@@ -41,10 +41,8 @@
 #define SIPHASH_H
 
 #include <array>
-#include <bit>
-#include <concepts>
+#include "cxxcompat.h"
 #include <algorithm>
-#include <span>
 
 // SipHash is a fast, secure PRF that is often used for hash tables.
 
@@ -54,7 +52,9 @@ uint64_t siphash24(std::span<const uint64_t, 2> key,
                    std::span<const uint8_t> input);
 
 // Define here to be usable in tests.
-template <std::integral T> T byteswap(T v) {
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
+T byteswap(T v) {
   auto c = std::bit_cast<std::array<uint8_t, sizeof(T)>>(v);
   std::ranges::reverse(c);
   return std::bit_cast<T>(c);

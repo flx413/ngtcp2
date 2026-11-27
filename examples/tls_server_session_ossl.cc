@@ -37,14 +37,14 @@ TLSServerSession::init(const TLSServerContext &tls_ctx, HandlerBase *handler) {
   if (!ssl) {
     std::println(stderr, "SSL_new: {}",
                  ERR_error_string(ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   ngtcp2_crypto_ossl_ctx_set_ssl(ossl_ctx_, ssl);
 
   if (ngtcp2_crypto_ossl_configure_server_session(ssl) != 0) {
     std::println(stderr, "ngtcp2_crypto_ossl_configure_server_session failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   SSL_set_app_data(ssl, handler->conn_ref());

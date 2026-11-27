@@ -42,14 +42,14 @@ using namespace std::literals;
 namespace ngtcp2 {
 
 constexpr auto ALPN_LIST = "ngtcp2-sim"sv;
-constexpr auto CIDLEN = 10UZ;
+constexpr auto CIDLEN = 10U;
 constexpr uint8_t SERVER_SECRET[] = "server_secret";
 constexpr std::array<uint8_t, 32> static_secret{0xCA, 0xCE, 0xCA, 0xFE};
 
 namespace {
 std::expected<void, Error> generate_secure_random(std::span<uint8_t> data) {
   if (wolfSSL_RAND_bytes(data.data(), static_cast<int>(data.size())) != 1) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   return {};
@@ -355,7 +355,7 @@ Endpoint::setup_server(std::span<const uint8_t> original_dcid,
   if (ngtcp2_crypto_generate_stateless_reset_token(
         params.stateless_reset_token, SERVER_SECRET, sizeof(SERVER_SECRET) - 1,
         &scid) != 0) {
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   auto path = ngtcp2_path{
@@ -366,39 +366,39 @@ Endpoint::setup_server(std::span<const uint8_t> original_dcid,
   if (ngtcp2_conn_server_new(&conn_, &dcid, &scid, &path, version,
                              &config_.callbacks, &settings, &params, nullptr,
                              config_.user_data) != 0) {
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   ssl_ctx_ = wolfSSL_CTX_new(wolfTLSv1_3_server_method());
   if (!ssl_ctx_) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (ngtcp2_crypto_wolfssl_configure_server_context(ssl_ctx_) != 0) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (wolfSSL_CTX_use_certificate_buffer(
         ssl_ctx_, reinterpret_cast<const uint8_t *>(tls_crt.data()),
         static_cast<long>(tls_crt.size()), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (wolfSSL_CTX_use_PrivateKey_buffer(
         ssl_ctx_, reinterpret_cast<const uint8_t *>(tls_key.data()),
         static_cast<long>(tls_key.size()), SSL_FILETYPE_PEM) != SSL_SUCCESS) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   ssl_ = wolfSSL_new(ssl_ctx_);
   if (!ssl_) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (wolfSSL_UseALPN(ssl_, const_cast<char *>(ALPN_LIST.data()),
                       ALPN_LIST.size(),
                       WOLFSSL_ALPN_FAILED_ON_MISMATCH) != WOLFSSL_SUCCESS) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   wolfSSL_set_app_data(ssl_, &conn_ref_);
@@ -437,27 +437,27 @@ Endpoint::setup_client(const ngtcp2_addr *remote_addr) {
   if (ngtcp2_conn_client_new(
         &conn_, &dcid, &scid, &path, NGTCP2_PROTO_VER_V1, &config_.callbacks,
         &config_.settings, &config_.params, nullptr, config_.user_data) != 0) {
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   ssl_ctx_ = wolfSSL_CTX_new(wolfTLSv1_3_client_method());
   if (!ssl_ctx_) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (ngtcp2_crypto_wolfssl_configure_client_context(ssl_ctx_) != 0) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   ssl_ = wolfSSL_new(ssl_ctx_);
   if (!ssl_) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (wolfSSL_UseALPN(ssl_, const_cast<char *>(ALPN_LIST.data()),
                       ALPN_LIST.size(),
                       WOLFSSL_ALPN_FAILED_ON_MISMATCH) != WOLFSSL_SUCCESS) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   wolfSSL_set_app_data(ssl_, &conn_ref_);
@@ -490,14 +490,14 @@ std::expected<void, Error> Endpoint::on_read(const NetworkPath &path,
       auto rv =
         ngtcp2_pkt_decode_version_cid(&vcid, pkt.data(), pkt.size(), CIDLEN);
       if (rv != 0) {
-        return std::unexpected{Error::QUIC};
+        return std::cxx17::unexpected{Error::QUIC};
       }
 
       return send_retry(path, vcid);
     }
 
     std::println(stderr, "ngtcp2_conn_read_pkt: {}", ngtcp2_strerror(rv));
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   ctx.endpoint->get_channel().schedule_timeout(ctx.ts);
@@ -532,7 +532,7 @@ Endpoint::send_retry(const NetworkPath &path, const ngtcp2_version_cid &vcid) {
     cpath.remote.addr, cpath.remote.addrlen, &scid, &odcid,
     to_ngtcp2_tstamp(channel_.get_timestamp()));
   if (tokenlen < 0) {
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   std::array<uint8_t, MAX_UDP_PAYLOAD_SIZE> buf;
@@ -541,7 +541,7 @@ Endpoint::send_retry(const NetworkPath &path, const ngtcp2_version_cid &vcid) {
                                           &dcid, &scid, &odcid, token.data(),
                                           as_unsigned(tokenlen));
   if (nwrite < 0) {
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   if (nwrite) {
@@ -562,7 +562,7 @@ std::expected<void, Error> Endpoint::on_write(const Context &ctx) {
   }
 
   if (to_ngtcp2_tstamp(Timestamp::max()) < next_expiry_ts) {
-    return std::unexpected{Error::INTERNAL};
+    return std::cxx17::unexpected{Error::INTERNAL};
   }
 
   ctx.endpoint->get_channel().schedule_timeout(to_timestamp(next_expiry_ts));
@@ -574,7 +574,7 @@ std::expected<void, Error> Endpoint::on_timeout(const Context &ctx) {
   auto rv = ngtcp2_conn_handle_expiry(conn_, to_ngtcp2_tstamp(ctx.ts));
   if (rv != 0) {
     std::println(stderr, "ngtcp2_conn_handle_expiry: {}", ngtcp2_strerror(rv));
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   return on_write(ctx);
@@ -774,7 +774,7 @@ std::optional<std::tuple<Event, Endpoint &>> Simulator::get_next_event() {
 
 std::expected<void, Error> Simulator::run() {
   if (client_.get_initialized()) {
-    return std::unexpected{Error::INTERNAL};
+    return std::cxx17::unexpected{Error::INTERNAL};
   }
 
   if (auto rv = client_.setup_client(&server_.get_endpoint_config().local_addr);
@@ -835,7 +835,7 @@ std::expected<void, Error> Simulator::run() {
   }
 
   if (k == max_events_) {
-    return std::unexpected{Error::INTERNAL};
+    return std::cxx17::unexpected{Error::INTERNAL};
   }
 
   return {};
@@ -857,7 +857,7 @@ std::expected<void, Error> Simulator::deliver_pkt(Endpoint &remote_ep,
     auto rv =
       ngtcp2_pkt_decode_version_cid(&vcid, pkt.data(), pkt.size(), CIDLEN);
     if (rv != 0) {
-      return std::unexpected{Error::QUIC};
+      return std::cxx17::unexpected{Error::QUIC};
     }
 
     ngtcp2_pkt_hd hd;
@@ -880,7 +880,7 @@ std::expected<void, Error> Simulator::deliver_pkt(Endpoint &remote_ep,
         cpath.remote.addrlen, &hd.dcid, to_ngtcp2_duration(timeout),
         to_ngtcp2_tstamp(ts));
       if (rv != 0) {
-        return std::unexpected{Error::QUIC};
+        return std::cxx17::unexpected{Error::QUIC};
       }
 
       token_params = TokenParams{
@@ -936,7 +936,7 @@ void HandshakeApp::configure(EndpointConfig &config) {
     if (nwrite < 0) {
       std::println(stderr, "ngtcp2_conn_write_pkt: {}",
                    ngtcp2_strerror(static_cast<int>(nwrite)));
-      return std::unexpected{Error::QUIC};
+      return std::cxx17::unexpected{Error::QUIC};
     }
 
     if (nwrite == 0) {
@@ -1022,7 +1022,7 @@ UniStreamApp::extend_max_local_streams_uni(ngtcp2_conn *conn) {
   if (rv != 0) {
     std::println(stderr, "ngtcp2_conn_open_uni_stream: {}",
                  ngtcp2_strerror(rv));
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   stream_id_ = stream_id;
@@ -1073,7 +1073,7 @@ std::expected<void, Error> UniStreamApp::on_write(ngtcp2_conn *conn,
     std::println(stderr, "ngtcp2_conn_writev_stream: {}",
                  ngtcp2_strerror(static_cast<int>(nwrite)));
 
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   if (nwrite == 0) {

@@ -41,7 +41,7 @@ TLSServerSession::init(const TLSServerContext &tls_ctx, HandlerBase *handler) {
   if (!ssl_) {
     std::println(stderr, "SSL_new: {}",
                  ERR_error_string(ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   SSL_set_app_data(ssl_, handler->conn_ref());
@@ -64,14 +64,14 @@ TLSServerSession::init(const TLSServerContext &tls_ctx, HandlerBase *handler) {
   if (quic_early_data_ctxlen < 0) {
     std::println(stderr, "ngtcp2_transport_params_encode: {}",
                  ngtcp2_strerror(static_cast<int>(quic_early_data_ctxlen)));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (SSL_set_quic_early_data_context(ssl_, quic_early_data_ctx.data(),
                                       as_unsigned(quic_early_data_ctxlen)) !=
       1) {
     std::println(stderr, "SSL_set_quic_early_data_context failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   return {};

@@ -72,7 +72,7 @@ TLSServerSession::init(const TLSServerContext &tls_ctx, HandlerBase *handler) {
                      GNUTLS_NO_AUTO_SEND_TICKET | GNUTLS_NO_END_OF_EARLY_DATA);
       rv != 0) {
     std::println(stderr, "gnutls_init failed: {}", gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   std::string priority = "%DISABLE_TLS13_COMPAT_MODE:";
@@ -84,7 +84,7 @@ TLSServerSession::init(const TLSServerContext &tls_ctx, HandlerBase *handler) {
       rv != 0) {
     std::println(stderr, "gnutls_priority_set_direct failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   auto rv = gnutls_session_ticket_enable_server(
@@ -92,7 +92,7 @@ TLSServerSession::init(const TLSServerContext &tls_ctx, HandlerBase *handler) {
   if (rv != 0) {
     std::println(stderr, "gnutls_session_ticket_enable_server failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   gnutls_handshake_set_hook_function(session_, GNUTLS_HANDSHAKE_CLIENT_HELLO,
@@ -101,7 +101,7 @@ TLSServerSession::init(const TLSServerContext &tls_ctx, HandlerBase *handler) {
   if (ngtcp2_crypto_gnutls_configure_server_session(session_) != 0) {
     std::println(stderr,
                  "ngtcp2_crypto_gnutls_configure_server_session failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   gnutls_anti_replay_enable(session_, tls_ctx.get_anti_replay());
@@ -115,7 +115,7 @@ TLSServerSession::init(const TLSServerContext &tls_ctx, HandlerBase *handler) {
       rv != 0) {
     std::println(stderr, "gnutls_credentials_set failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   // TODO Set all available ALPN based on app_proto.
@@ -140,7 +140,7 @@ std::expected<void, Error> TLSServerSession::send_session_ticket() {
   if (auto rv = gnutls_session_ticket_send(session_, 1, 0); rv != 0) {
     std::println(stderr, "gnutls_session_ticket_send failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   return {};

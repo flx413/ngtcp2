@@ -31,9 +31,7 @@
 
 #include <optional>
 #include <string_view>
-#include <span>
-#include <print>
-#include <expected>
+#include "cxxcompat.h"
 
 #include <ngtcp2/ngtcp2.h>
 
@@ -87,7 +85,7 @@ enum class AppProtocol {
 };
 
 template <size_t N>
-consteval std::span<const uint8_t> span_from_lit(const uint8_t (&s)[N]) {
+constexpr std::span<const uint8_t> span_from_lit(const uint8_t (&s)[N]) {
   return {s, N - 1};
 }
 
@@ -101,7 +99,7 @@ inline constexpr auto H3_ALPN_V1 = span_from_lit(RAW_H3_ALPN);
 
 inline constexpr uint32_t TLS_ALERT_ECH_REQUIRED = 121;
 
-inline constexpr auto MAX_RECV_PKTS = 64UZ;
+inline constexpr auto MAX_RECV_PKTS = std::size_t{64};
 
 // msghdr_get_ecn gets ECN bits from |msg|.  |family| is the address
 // family from which packet is received.
@@ -185,10 +183,8 @@ void sockaddr_set(Sockaddr &skaddr, const sockaddr *sa);
 
 } // namespace ngtcp2
 
-template <>
-struct std::formatter<ngtcp2::Error> : public std::formatter<std::string_view> {
-  template <typename FormatContext>
-  auto format(ngtcp2::Error e, FormatContext &ctx) const {
+template <> struct std::formatter<ngtcp2::Error> {
+  std::string format(ngtcp2::Error e, std::string_view = {}) const {
     auto s = "unknown"sv;
 
     switch (e) {
@@ -245,7 +241,7 @@ struct std::formatter<ngtcp2::Error> : public std::formatter<std::string_view> {
       break;
     }
 
-    return std::formatter<std::string_view>::format(s, ctx);
+    return std::string{s};
   }
 };
 

@@ -50,7 +50,7 @@ ProtoCodec::acked_stream_data_offset(int64_t stream_id, uint64_t datalen) {
       rv != 0) {
     std::println(stderr, "nghttp3_conn_add_ack_offset: {}",
                  nghttp3_strerror(rv));
-    return std::unexpected{Error::HTTP3};
+    return std::cxx17::unexpected{Error::HTTP3};
   }
 
   return {};
@@ -65,7 +65,7 @@ std::expected<void, Error> ProtoCodec::on_stream_reset(int64_t stream_id) {
       rv != 0) {
     std::println(stderr, "nghttp3_conn_shutdown_stream_read: {}",
                  nghttp3_strerror(rv));
-    return std::unexpected{Error::HTTP3};
+    return std::cxx17::unexpected{Error::HTTP3};
   }
 
   return {};
@@ -81,7 +81,7 @@ ProtoCodec::on_stream_stop_sending(int64_t stream_id) {
       rv != 0) {
     std::println(stderr, "nghttp3_conn_shutdown_stream_read: {}",
                  nghttp3_strerror(rv));
-    return std::unexpected{Error::HTTP3};
+    return std::cxx17::unexpected{Error::HTTP3};
   }
 
   return {};
@@ -100,7 +100,7 @@ ProtoCodec::extend_max_stream_data(int64_t stream_id, uint64_t max_data) {
   if (auto rv = nghttp3_conn_unblock_stream(httpconn_, stream_id); rv != 0) {
     std::println(stderr, "nghttp3_conn_unblock_stream: {}",
                  nghttp3_strerror(rv));
-    return std::unexpected{Error::HTTP3};
+    return std::cxx17::unexpected{Error::HTTP3};
   }
   return {};
 }
@@ -217,7 +217,7 @@ ProtoCodec::recv_stream_data(uint32_t flags, int64_t stream_id,
       &last_error_,
       nghttp3_err_infer_quic_app_error_code(static_cast<int>(nconsumed)),
       nullptr, 0);
-    return std::unexpected{Error::HTTP3};
+    return std::cxx17::unexpected{Error::HTTP3};
   }
 
   ngtcp2_conn_extend_max_stream_offset(conn_, stream_id,
@@ -254,7 +254,7 @@ ProtoCodec::on_stream_close(int64_t stream_id,
                    nghttp3_strerror(rv));
       ngtcp2_ccerr_set_application_error(
         &last_error_, nghttp3_err_infer_quic_app_error_code(rv), nullptr, 0);
-      return std::unexpected{Error::HTTP3};
+      return std::cxx17::unexpected{Error::HTTP3};
     }
 
     return {};
@@ -410,7 +410,7 @@ ProtoCodec::http_stop_sending(int64_t stream_id, uint64_t app_error_code) {
       rv != 0) {
     std::println(stderr, "ngtcp2_conn_shutdown_stream_read: {}",
                  ngtcp2_strerror(rv));
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
   return {};
 }
@@ -453,7 +453,7 @@ ProtoCodec::http_reset_stream(int64_t stream_id, uint64_t app_error_code) {
       rv != 0) {
     std::println(stderr, "ngtcp2_conn_shutdown_stream_write: {}",
                  ngtcp2_strerror(rv));
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
   return {};
 }
@@ -617,7 +617,7 @@ std::expected<void, Error> ProtoCodec::start_response(Stream *stream) {
         rv != 0) {
       std::println(stderr, "nghttp3_conn_get_stream_priority2: {}",
                    nghttp3_strerror(rv));
-      return std::unexpected{Error::HTTP3};
+      return std::cxx17::unexpected{Error::HTTP3};
     }
 
     if (req.pri.urgency != -1) {
@@ -632,7 +632,7 @@ std::expected<void, Error> ProtoCodec::start_response(Stream *stream) {
         rv != 0) {
       std::println(stderr, "nghttp3_conn_set_server_stream_priority: {}",
                    nghttp3_strerror(rv));
-      return std::unexpected{Error::HTTP3};
+      return std::cxx17::unexpected{Error::HTTP3};
     }
 
     prival = "u=";
@@ -654,7 +654,7 @@ std::expected<void, Error> ProtoCodec::start_response(Stream *stream) {
       rv != 0) {
     std::println(stderr, "nghttp3_conn_submit_response: {}",
                  nghttp3_strerror(rv));
-    return std::unexpected{Error::HTTP3};
+    return std::cxx17::unexpected{Error::HTTP3};
   }
 
   if (config.send_trailers && !maybe_dyn_len) {
@@ -668,7 +668,7 @@ std::expected<void, Error> ProtoCodec::start_response(Stream *stream) {
         rv != 0) {
       std::println(stderr, "nghttp3_conn_submit_trailers: {}",
                    nghttp3_strerror(rv));
-      return std::unexpected{Error::HTTP3};
+      return std::cxx17::unexpected{Error::HTTP3};
     }
   }
 
@@ -705,7 +705,7 @@ ProtoCodec::send_status_response(Stream *stream, unsigned int status_code,
       rv != 0) {
     std::println(stderr, "nghttp3_conn_submit_response: {}",
                  nghttp3_strerror(rv));
-    return std::unexpected{Error::HTTP3};
+    return std::cxx17::unexpected{Error::HTTP3};
   }
 
   if (config.send_trailers) {
@@ -719,7 +719,7 @@ ProtoCodec::send_status_response(Stream *stream, unsigned int status_code,
         rv != 0) {
       std::println(stderr, "nghttp3_conn_submit_trailers: {}",
                    nghttp3_strerror(rv));
-      return std::unexpected{Error::HTTP3};
+      return std::cxx17::unexpected{Error::HTTP3};
     }
   }
 
@@ -742,7 +742,7 @@ std::expected<void, Error> ProtoCodec::setup_httpconn() {
   if (ngtcp2_conn_get_streams_uni_left2(conn_) < 3) {
     std::println(stderr,
                  "peer does not allow at least 3 unidirectional streams.");
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   static constexpr auto callbacks = nghttp3_callbacks{
@@ -778,7 +778,7 @@ std::expected<void, Error> ProtoCodec::setup_httpconn() {
         nghttp3_conn_server_new(&httpconn_, &callbacks, &settings, mem, this);
       rv != 0) {
     std::println(stderr, "nghttp3_conn_server_new: {}", nghttp3_strerror(rv));
-    return std::unexpected{Error::HTTP3};
+    return std::cxx17::unexpected{Error::HTTP3};
   }
 
   auto params = ngtcp2_conn_get_local_transport_params2(conn_);
@@ -792,14 +792,14 @@ std::expected<void, Error> ProtoCodec::setup_httpconn() {
       rv != 0) {
     std::println(stderr, "ngtcp2_conn_open_uni_stream: {}",
                  ngtcp2_strerror(rv));
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   if (auto rv = nghttp3_conn_bind_control_stream(httpconn_, ctrl_stream_id);
       rv != 0) {
     std::println(stderr, "nghttp3_conn_bind_control_stream: {}",
                  nghttp3_strerror(rv));
-    return std::unexpected{Error::HTTP3};
+    return std::cxx17::unexpected{Error::HTTP3};
   }
 
   if (!config.quiet) {
@@ -813,7 +813,7 @@ std::expected<void, Error> ProtoCodec::setup_httpconn() {
       rv != 0) {
     std::println(stderr, "ngtcp2_conn_open_uni_stream: {}",
                  ngtcp2_strerror(rv));
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   if (auto rv =
@@ -821,7 +821,7 @@ std::expected<void, Error> ProtoCodec::setup_httpconn() {
       rv != 0) {
     std::println(stderr, "ngtcp2_conn_open_uni_stream: {}",
                  ngtcp2_strerror(rv));
-    return std::unexpected{Error::QUIC};
+    return std::cxx17::unexpected{Error::QUIC};
   }
 
   if (auto rv = nghttp3_conn_bind_qpack_streams(httpconn_, qpack_enc_stream_id,
@@ -829,7 +829,7 @@ std::expected<void, Error> ProtoCodec::setup_httpconn() {
       rv != 0) {
     std::println(stderr, "nghttp3_conn_bind_qpack_streams: {}",
                  nghttp3_strerror(rv));
-    return std::unexpected{Error::HTTP3};
+    return std::cxx17::unexpected{Error::HTTP3};
   }
 
   if (!config.quiet) {

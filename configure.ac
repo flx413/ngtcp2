@@ -197,7 +197,7 @@ AC_PROG_MKDIR_P
 
 PKG_PROG_PKG_CONFIG([0.20])
 
-AX_CXX_COMPILE_STDCXX([23], [], [optional])
+AX_CXX_COMPILE_STDCXX([17], [], [optional])
 
 case "${build}" in
   *-apple-darwin*)
@@ -555,8 +555,8 @@ if test "x${lib_only}" = "xno"; then
 fi
 
 if test "x${lib_only}" = "xno" &&
-   test "x${HAVE_CXX23}" != "x1"; then
-  AC_MSG_WARN([C++ compiler is not capable of C++23.  Examples will not be built.])
+   test "x${HAVE_CXX17}" != "x1"; then
+  AC_MSG_WARN([C++ compiler is not capable of C++17.  Examples will not be built.])
 fi
 
 enable_examples=no
@@ -564,7 +564,7 @@ if test "x${lib_only}" = "xno" &&
    test "x${have_libnghttp3}" = "xyes" &&
    test "x${have_crypto}" = "xyes" &&
    test "x${have_libev}" = "xyes" &&
-   test "x${HAVE_CXX23}" = "x1"; then
+   test "x${HAVE_CXX17}" = "x1"; then
   enable_examples=yes
 fi
 

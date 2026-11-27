@@ -35,7 +35,7 @@
 #include <string>
 #include <string_view>
 #include <functional>
-#include <span>
+#include "cxxcompat.h"
 #include <filesystem>
 
 #include <ngtcp2/ngtcp2_crypto.h>
@@ -182,7 +182,7 @@ struct HTTPHeader {
   std::string_view value;
 };
 
-inline constexpr auto NGTCP2_STATELESS_RESET_BURST = 100UZ;
+inline constexpr auto NGTCP2_STATELESS_RESET_BURST = 100U;
 
 struct Buffer {
   Buffer(const uint8_t *data, size_t datalen);

@@ -27,7 +27,7 @@
 #include <limits>
 #include <array>
 #include <iterator>
-#include <expected>
+#include "cxxcompat.h"
 #include <filesystem>
 
 #include "util.h"
@@ -64,7 +64,7 @@ const MunitSuite util_suite{
 namespace util {
 std::expected<HPKEPrivateKey, Error>
 read_hpke_private_key_pem(const std::filesystem::path &path) {
-  return std::unexpected{Error::NOT_IMPLEMENTED};
+  return std::cxx17::unexpected{Error::NOT_IMPLEMENTED};
 }
 } // namespace util
 
@@ -72,7 +72,7 @@ namespace util {
 std::expected<std::vector<uint8_t>, Error>
 read_pem(const std::filesystem::path &path, std::string_view name,
          std::string_view type) {
-  return std::unexpected{Error::NOT_IMPLEMENTED};
+  return std::cxx17::unexpected{Error::NOT_IMPLEMENTED};
 }
 } // namespace util
 
@@ -81,13 +81,13 @@ std::expected<void, Error> write_pem(const std::filesystem::path &path,
                                      std::string_view name,
                                      std::string_view type,
                                      std::span<const uint8_t> data) {
-  return std::unexpected{Error::NOT_IMPLEMENTED};
+  return std::cxx17::unexpected{Error::NOT_IMPLEMENTED};
 }
 } // namespace util
 
 namespace util {
 std::expected<void, Error> generate_secure_random(std::span<uint8_t> data) {
-  return std::unexpected{Error::NOT_IMPLEMENTED};
+  return std::cxx17::unexpected{Error::NOT_IMPLEMENTED};
 }
 } // namespace util
 
@@ -334,17 +334,31 @@ void test_util_format_hex() {
   std::array<char, 64> buf;
   auto b = std::ranges::begin(buf);
 
-  assert_eq("00",
-            std::string_view(b, util::format_hex(static_cast<uint8_t>(0U), b)));
-  assert_eq("ec", std::string_view(
-                    b, util::format_hex(static_cast<uint8_t>(0xECU), b)));
-  assert_eq("00000000", std::string_view(b, util::format_hex(0U, b)));
-  assert_eq("0000ab01", std::string_view(b, util::format_hex(0xAB01U, b)));
-  assert_eq("deadbeefbaadf00d",
-            std::string_view(b, util::format_hex(0xDEADBEEFBAADF00DU, b)));
+  assert_eq(
+    "00",
+    std::string_view(
+      b, static_cast<size_t>(util::format_hex(static_cast<uint8_t>(0U), b) -
+                             b)));
+  assert_eq(
+    "ec",
+    std::string_view(
+      b, static_cast<size_t>(util::format_hex(static_cast<uint8_t>(0xECU), b) -
+                             b)));
+  assert_eq("00000000",
+            std::string_view(
+              b, static_cast<size_t>(util::format_hex(0U, b) - b)));
+  assert_eq("0000ab01",
+            std::string_view(
+              b, static_cast<size_t>(util::format_hex(0xAB01U, b) - b)));
+  assert_eq(
+    "deadbeefbaadf00d",
+    std::string_view(
+      b, static_cast<size_t>(util::format_hex(0xDEADBEEFBAADF00DU, b) - b)));
   assert_eq("ffffffffffffffff",
             std::string_view(
-              b, util::format_hex(std::numeric_limits<uint64_t>::max(), b)));
+              b, static_cast<size_t>(
+                   util::format_hex(std::numeric_limits<uint64_t>::max(), b) -
+                   b)));
 
   std::vector<char> char_vec;
   util::format_hex(a, std::back_inserter(char_vec));
@@ -381,19 +395,15 @@ void test_util_split_str() {
               "bravo"sv,
               "charlie"sv,
             }),
-            util::split_str("alpha,bravo,charlie"sv) |
-              std::ranges::to<std::vector>());
+            util::split_str("alpha,bravo,charlie"sv));
   assert_eq((std::vector{
               "alpha"sv,
               "bravo"sv,
               "charlie"sv,
             }),
-            util::split_str("alpha bravo charlie"sv, ' ') |
-              std::ranges::to<std::vector>());
-  assert_eq((std::vector<std::string_view>{}),
-            util::split_str(""sv, ' ') | std::ranges::to<std::vector>());
-  assert_eq((std::vector{""sv, ""sv}),
-            util::split_str(","sv) | std::ranges::to<std::vector>());
+            util::split_str("alpha bravo charlie"sv, ' '));
+  assert_eq((std::vector<std::string_view>{}), util::split_str(""sv, ' '));
+  assert_eq((std::vector{""sv, ""sv}), util::split_str(","sv));
   assert_eq((std::vector{
               ""sv,
               "alpha"sv,
@@ -404,8 +414,7 @@ void test_util_split_str() {
               ""sv,
               ""sv,
             }),
-            util::split_str(" alpha   bravo charlie  "sv, ' ') |
-              std::ranges::to<std::vector>());
+            util::split_str(" alpha   bravo charlie  "sv, ' '));
 }
 
 void test_util_format_app_error_code() {

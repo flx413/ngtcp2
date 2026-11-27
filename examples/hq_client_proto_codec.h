@@ -30,7 +30,7 @@
 #endif // defined(HAVE_CONFIG_H)
 
 #include <vector>
-#include <expected>
+#include "cxxcompat.h"
 #include <set>
 #include <optional>
 

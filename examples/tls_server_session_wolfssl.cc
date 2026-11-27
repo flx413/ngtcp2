@@ -35,7 +35,7 @@ TLSServerSession::init(const TLSServerContext &tls_ctx, HandlerBase *handler) {
   if (!ssl_) {
     std::println(stderr, "wolfSSL_new: {}",
                  wolfSSL_ERR_error_string(wolfSSL_ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   wolfSSL_set_app_data(ssl_, handler->conn_ref());

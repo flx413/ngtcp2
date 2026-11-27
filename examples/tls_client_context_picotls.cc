@@ -117,7 +117,7 @@ std::expected<void, Error> TLSClientContext::init(const char *private_key_file,
   if (ngtcp2_crypto_picotls_configure_client_context(&ctx_) != 0) {
     std::println(stderr,
                  "ngtcp2_crypto_picotls_configure_client_context failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (!config.session_file.empty()) {
@@ -127,7 +127,7 @@ std::expected<void, Error> TLSClientContext::init(const char *private_key_file,
   if (private_key_file && cert_file) {
     if (ptls_load_certificates(&ctx_, cert_file) != 0) {
       std::println(stderr, "ptls_load_certificates failed");
-      return std::unexpected{Error::CRYPTO};
+      return std::cxx17::unexpected{Error::CRYPTO};
     }
 
     if (auto rv = load_private_key(private_key_file); !rv) {
@@ -144,7 +144,7 @@ TLSClientContext::load_private_key(const char *private_key_file) {
   if (fp == nullptr) {
     std::println(stderr, "Could not open private key file {}: {}",
                  private_key_file, strerror(errno));
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   auto fp_d = defer([fp] { fclose(fp); });
@@ -153,14 +153,14 @@ TLSClientContext::load_private_key(const char *private_key_file) {
   if (pkey == nullptr) {
     std::println(stderr, "Could not read private key file {}",
                  private_key_file);
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   auto pkey_d = defer([pkey] { EVP_PKEY_free(pkey); });
 
   if (ptls_openssl_init_sign_certificate(&sign_cert_, pkey) != 0) {
     std::println(stderr, "ptls_openssl_init_sign_certificate failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   ctx_.sign_certificate = &sign_cert_.super;

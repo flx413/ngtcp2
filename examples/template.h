@@ -29,14 +29,18 @@
 #include <functional>
 #include <utility>
 #include <type_traits>
-#include <span>
+#include "cxxcompat.h"
 
-template <std::integral T>
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
 [[nodiscard]] constexpr auto as_unsigned(T n) noexcept {
   return static_cast<std::make_unsigned_t<T>>(n);
 }
 
-template <std::unsigned_integral T>
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value,
+                                  int>::type = 0>
 [[nodiscard]] constexpr auto as_signed(T n) noexcept {
   return static_cast<std::make_signed_t<T>>(n);
 }
@@ -96,16 +100,16 @@ as_writable_uint8_span(std::span<T, N> s) noexcept {
     reinterpret_cast<uint8_t *>(s.data()), s.size_bytes()};
 }
 
-template <typename R>
-requires(std::ranges::contiguous_range<R> && std::ranges::sized_range<R> &&
-         std::ranges::borrowed_range<R> &&
-         !std::is_array_v<std::remove_cvref_t<R>> &&
-         sizeof(std::ranges::range_value_t<R>) ==
-           sizeof(std::string_view::value_type))
+template <typename R,
+          typename std::enable_if<
+            !std::is_array<typename std::remove_reference<R>::type>::value,
+            int>::type = 0,
+          typename = decltype(std::data(std::declval<R &>())),
+          typename = decltype(std::size(std::declval<R &>()))>
 [[nodiscard]] std::string_view as_string_view(R &&r) {
   return std::string_view{
-    reinterpret_cast<std::string_view::const_pointer>(std::ranges::data(r)),
-    std::ranges::size(r)};
+    reinterpret_cast<std::string_view::const_pointer>(std::data(r)),
+    std::size(r)};
 }
 
 #endif // !defined(TEMPLATE_H)

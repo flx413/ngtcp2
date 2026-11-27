@@ -74,7 +74,7 @@ TLSClientSession::init(bool &early_data_enabled, TLSClientContext &tls_ctx,
   cptls_.ptls = ptls_client_new(tls_ctx.get_native_handle());
   if (!cptls_.ptls) {
     std::println(stderr, "ptls_client_new failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   *ptls_get_data_ptr(cptls_.ptls) = client->conn_ref();
@@ -94,7 +94,7 @@ TLSClientSession::init(bool &early_data_enabled, TLSClientContext &tls_ctx,
   if (ngtcp2_crypto_picotls_configure_client_session(&cptls_, conn) != 0) {
     std::println(stderr,
                  "ngtcp2_crypto_picotls_configure_client_session failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   switch (app_proto) {

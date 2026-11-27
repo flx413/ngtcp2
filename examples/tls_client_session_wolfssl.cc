@@ -49,7 +49,7 @@ TLSClientSession::init(bool &early_data_enabled,
   if (!ssl_) {
     std::println(stderr, "wolfSSL_new: {}",
                  ERR_error_string(ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   wolfSSL_set_app_data(ssl_, client->conn_ref());

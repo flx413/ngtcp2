@@ -37,7 +37,7 @@ TLSServerSession::init(const TLSServerContext &tls_ctx, HandlerBase *handler) {
   if (!ssl_) {
     std::println(stderr, "SSL_new: {}",
                  ERR_error_string(ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   SSL_set_app_data(ssl_, handler->conn_ref());

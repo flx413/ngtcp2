@@ -28,7 +28,7 @@
 #include <fstream>
 #include <array>
 #include <algorithm>
-#include <expected>
+#include "cxxcompat.h"
 #include <filesystem>
 
 #include <ngtcp2/ngtcp2_crypto.h>
@@ -45,7 +45,7 @@ namespace util {
 
 std::expected<void, Error> generate_secure_random(std::span<uint8_t> data) {
   if (gnutls_rnd(GNUTLS_RND_RANDOM, data.data(), data.size()) != 0) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   return {};
@@ -53,7 +53,7 @@ std::expected<void, Error> generate_secure_random(std::span<uint8_t> data) {
 
 std::expected<HPKEPrivateKey, Error>
 read_hpke_private_key_pem(const std::filesystem::path &path) {
-  return std::unexpected{Error::NOT_IMPLEMENTED};
+  return std::cxx17::unexpected{Error::NOT_IMPLEMENTED};
 }
 
 std::expected<std::vector<uint8_t>, Error>
@@ -62,7 +62,7 @@ read_pem(const std::filesystem::path &path, std::string_view name,
   auto f = std::ifstream(path);
   if (!f) {
     std::println(stderr, "Could not read {} file {}", name, path.native());
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   f.seekg(0, std::ios::end);
@@ -78,7 +78,7 @@ read_pem(const std::filesystem::path &path, std::string_view name,
   gnutls_datum_t d;
   if (auto rv = gnutls_pem_base64_decode2(type.data(), &s, &d); rv < 0) {
     std::println(stderr, "Could not read {} file {}", name, path.native());
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   auto res = std::vector(d.data, d.data + d.size);
@@ -95,7 +95,7 @@ std::expected<void, Error> write_pem(const std::filesystem::path &path,
   auto f = std::ofstream(path);
   if (!f) {
     std::println(stderr, "Could not write {} to {}", name, path.native());
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   gnutls_datum_t s{
@@ -106,7 +106,7 @@ std::expected<void, Error> write_pem(const std::filesystem::path &path,
   gnutls_datum_t d;
   if (auto rv = gnutls_pem_base64_encode2(type.data(), &s, &d); rv < 0) {
     std::println(stderr, "Could not encode {} to {}", name, path.native());
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   f.write(reinterpret_cast<const char *>(d.data), d.size);

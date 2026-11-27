@@ -253,7 +253,7 @@ std::expected<void, Error> hexdump_write(int fd,
        (nwrite = write(fd, data.data(), data.size())) == -1 && errno == EINTR;)
     ;
   if (nwrite == -1) {
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   return {};
@@ -269,7 +269,7 @@ std::expected<void, Error> hexdump(FILE *out, std::span<const uint8_t> data) {
   // accept, which is the size of a single full line output + one
   // repeat line marker ("*\n").  If the remaining buffer size is less
   // than that, flush the buffer and reset.
-  constexpr auto min_space = 79UZ + 2UZ;
+  constexpr auto min_space = 79U + 2U;
 
   auto fd = fileno(out);
   std::array<uint8_t, 4096> buf;
@@ -392,7 +392,7 @@ std::expected<std::unordered_map<std::string, std::string>, Error>
 read_mime_types(const std::filesystem::path &filename) {
   std::ifstream f(filename);
   if (!f) {
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   std::unordered_map<std::string, std::string> dest;
@@ -450,14 +450,14 @@ parse_uint_internal(std::string_view s) {
   uint64_t res = 0;
 
   if (s.empty()) {
-    return std::unexpected{Error::INVALID_ARGUMENT};
+    return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
   }
 
   for (size_t i = 0; i < s.size(); ++i) {
     auto c = s[i];
     if (!is_digit(c)) {
       if (i == 0) {
-        return std::unexpected{Error::INVALID_ARGUMENT};
+        return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
       }
 
       return {{res, i}};
@@ -465,7 +465,7 @@ parse_uint_internal(std::string_view s) {
 
     auto d = static_cast<uint64_t>(c - '0');
     if (res > (std::numeric_limits<uint64_t>::max() - d) / 10) {
-      return std::unexpected{Error::INTEGER_OVERFLOW};
+      return std::cxx17::unexpected{Error::INTEGER_OVERFLOW};
     }
 
     res *= 10;
@@ -479,11 +479,11 @@ parse_uint_internal(std::string_view s) {
 std::expected<uint64_t, Error> parse_uint(std::string_view s) {
   auto o = parse_uint_internal(s);
   if (!o) {
-    return std::unexpected{o.error()};
+    return std::cxx17::unexpected{o.error()};
   }
   auto [res, idx] = *o;
   if (idx != s.size()) {
-    return std::unexpected{Error::INVALID_ARGUMENT};
+    return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
   }
   return res;
 }
@@ -491,14 +491,14 @@ std::expected<uint64_t, Error> parse_uint(std::string_view s) {
 std::expected<uint64_t, Error> parse_uint_iec(std::string_view s) {
   auto o = parse_uint_internal(s);
   if (!o) {
-    return std::unexpected{o.error()};
+    return std::cxx17::unexpected{o.error()};
   }
   auto [res, idx] = *o;
   if (idx == s.size()) {
     return res;
   }
   if (idx + 1 != s.size()) {
-    return std::unexpected{Error::INVALID_ARGUMENT};
+    return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
   }
 
   uint64_t m;
@@ -516,11 +516,11 @@ std::expected<uint64_t, Error> parse_uint_iec(std::string_view s) {
     m = 1 << 10;
     break;
   default:
-    return std::unexpected{Error::INVALID_ARGUMENT};
+    return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
   }
 
   if (res > std::numeric_limits<uint64_t>::max() / m) {
-    return std::unexpected{Error::INTEGER_OVERFLOW};
+    return std::cxx17::unexpected{Error::INTEGER_OVERFLOW};
   }
 
   return res * m;
@@ -529,7 +529,7 @@ std::expected<uint64_t, Error> parse_uint_iec(std::string_view s) {
 std::expected<uint64_t, Error> parse_duration(std::string_view s) {
   auto o = parse_uint_internal(s);
   if (!o) {
-    return std::unexpected{o.error()};
+    return std::cxx17::unexpected{o.error()};
   }
   auto [res, idx] = *o;
   if (idx == s.size()) {
@@ -552,7 +552,7 @@ std::expected<uint64_t, Error> parse_duration(std::string_view s) {
       m = NGTCP2_SECONDS;
       break;
     default:
-      return std::unexpected{Error::INVALID_ARGUMENT};
+      return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
     }
   } else if (idx + 2 == s.size() && (s[idx + 1] == 's' || s[idx + 1] == 'S')) {
     switch (s[idx]) {
@@ -568,14 +568,14 @@ std::expected<uint64_t, Error> parse_duration(std::string_view s) {
     case 'n':
       return res;
     default:
-      return std::unexpected{Error::INVALID_ARGUMENT};
+      return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
     }
   } else {
-    return std::unexpected{Error::INVALID_ARGUMENT};
+    return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
   }
 
   if (res > std::numeric_limits<uint64_t>::max() / m) {
-    return std::unexpected{Error::INTEGER_OVERFLOW};
+    return std::cxx17::unexpected{Error::INTEGER_OVERFLOW};
   }
 
   return res * m;
@@ -619,10 +619,10 @@ template <typename InputIt> InputIt eat_dir(InputIt first, InputIt last) {
 } // namespace
 
 std::expected<std::string, Error> normalize_path(std::string_view path) {
-  constexpr auto max_path = 1024UZ;
+  constexpr auto max_path = 1024U;
 
   if (path.size() > max_path) {
-    return std::unexpected{Error::INVALID_ARGUMENT};
+    return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
   }
 
   assert(path.size() > 0);
@@ -683,14 +683,14 @@ std::expected<void, Error> make_socket_nonblocking(int fd) {
   while ((flags = fcntl(fd, F_GETFL, 0)) == -1 && errno == EINTR)
     ;
   if (flags == -1) {
-    return std::unexpected{Error::SYSCALL};
+    return std::cxx17::unexpected{Error::SYSCALL};
   }
 
   while ((rv = fcntl(fd, F_SETFL, flags | O_NONBLOCK)) == -1 && errno == EINTR)
     ;
 
   if (rv == -1) {
-    return std::unexpected{Error::SYSCALL};
+    return std::cxx17::unexpected{Error::SYSCALL};
   }
 
   return {};
@@ -701,12 +701,12 @@ std::expected<int, Error> create_nonblock_socket(int domain, int type,
 #ifdef SOCK_NONBLOCK
   auto fd = socket(domain, type | SOCK_NONBLOCK, protocol);
   if (fd == -1) {
-    return std::unexpected{Error::SYSCALL};
+    return std::cxx17::unexpected{Error::SYSCALL};
   }
 #else  // !defined(SOCK_NONBLOCK)
   auto fd = socket(domain, type, protocol);
   if (fd == -1) {
-    return std::unexpected{Error::SYSCALL};
+    return std::cxx17::unexpected{Error::SYSCALL};
   }
 
   make_socket_nonblocking(fd);
@@ -717,14 +717,14 @@ std::expected<int, Error> create_nonblock_socket(int domain, int type,
 
 std::expected<uint32_t, Error> parse_version(std::string_view s) {
   if (!util::istarts_with(s, "0x"sv)) {
-    return std::unexpected{Error::INVALID_ARGUMENT};
+    return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
   }
   auto k = s.substr(2);
   auto k_last = k.data() + k.size();
   uint32_t v;
   auto rv = std::from_chars(k.data(), k_last, v, 16);
   if (rv.ptr != k_last || rv.ec != std::errc{}) {
-    return std::unexpected{Error::INVALID_ARGUMENT};
+    return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
   }
 
   return v;
@@ -754,31 +754,29 @@ write_transport_params(const std::filesystem::path &path,
 }
 
 std::string percent_decode(std::string_view s) {
-  std::string result;
+  std::string result(s.size(), '\0');
+  auto head = result.data();
+  auto p = head;
 
-  result.resize_and_overwrite(s.size(), [s](auto p, auto len) {
-    auto head = p;
-
-    for (auto first = std::ranges::begin(s), last = std::ranges::end(s);
-         first != last; ++first) {
-      if (*first != '%') {
-        *p++ = *first;
-        continue;
-      }
-
-      if (first + 1 != last && first + 2 != last &&
-          is_hex_digit(*(first + 1)) && is_hex_digit(*(first + 2))) {
-        *p++ = static_cast<char>((hex_to_uint(*(first + 1)) << 4) +
-                                 hex_to_uint(*(first + 2)));
-        first += 2;
-        continue;
-      }
-
+  for (auto first = std::ranges::begin(s), last = std::ranges::end(s);
+       first != last; ++first) {
+    if (*first != '%') {
       *p++ = *first;
+      continue;
     }
 
-    return p - head;
-  });
+    if (first + 1 != last && first + 2 != last &&
+        is_hex_digit(*(first + 1)) && is_hex_digit(*(first + 2))) {
+      *p++ = static_cast<char>((hex_to_uint(*(first + 1)) << 4) +
+                               hex_to_uint(*(first + 2)));
+      first += 2;
+      continue;
+    }
+
+    *p++ = *first;
+  }
+
+  result.resize(static_cast<size_t>(p - head));
 
   return result;
 }
@@ -787,20 +785,20 @@ std::expected<std::vector<uint8_t>, Error>
 read_file(const std::filesystem::path &path) {
   auto fd = open(path.c_str(), O_RDONLY);
   if (fd == -1) {
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   auto fd_d = defer([fd] { close(fd); });
 
   auto size = lseek(fd, 0, SEEK_END);
   if (size == static_cast<off_t>(-1)) {
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   auto addr =
     mmap(nullptr, static_cast<size_t>(size), PROT_READ, MAP_SHARED, fd, 0);
   if (addr == MAP_FAILED) {
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   auto addr_d =
@@ -829,17 +827,17 @@ std::expected<ECHServerConfig, Error>
 read_ech_server_config(const std::filesystem::path &path) {
   auto pkey = read_hpke_private_key_pem(path);
   if (!pkey) {
-    return std::unexpected{pkey.error()};
+    return std::cxx17::unexpected{pkey.error()};
   }
 
   auto maybe_ech_config_list = read_pem(path, "ECH config"sv, "ECHCONFIG"sv);
   if (!maybe_ech_config_list) {
-    return std::unexpected{maybe_ech_config_list.error()};
+    return std::cxx17::unexpected{maybe_ech_config_list.error()};
   }
 
   auto ech_config_list = std::span{*maybe_ech_config_list};
   if (ech_config_list.size() < 2) {
-    return std::unexpected{Error::INVALID_ARGUMENT};
+    return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
   }
 
   auto data = ech_config_list.subspan(2);
@@ -847,7 +845,7 @@ read_ech_server_config(const std::filesystem::path &path) {
   if (auto len =
         static_cast<size_t>((ech_config_list[0] << 8) + ech_config_list[1]);
       len != data.size()) {
-    return std::unexpected{Error::INVALID_ARGUMENT};
+    return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
   }
 
   std::vector<std::vector<uint8_t>> ech_configs;
@@ -855,14 +853,14 @@ read_ech_server_config(const std::filesystem::path &path) {
   for (; !data.empty();) {
     // version and length, each 2 bytes
     if (data.size() < 4) {
-      return std::unexpected{Error::INVALID_ARGUMENT};
+      return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
     }
 
     auto version = (data[0] << 8) + data[1];
 
     auto conflen = static_cast<size_t>(4 + (data[2] << 8) + data[3]);
     if (data.size() < conflen) {
-      return std::unexpected{Error::INVALID_ARGUMENT};
+      return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
     }
 
     if (version == 0xFE0D) {
@@ -914,9 +912,11 @@ std::filesystem::path realpath(const std::filesystem::path &path) {
 }
 
 std::string format_app_error_code(std::optional<uint64_t> app_error_code) {
-  return app_error_code
-    .transform([](auto &&r) { return std::format("{:#x}", r); })
-    .value_or("(no error)");
+  if (!app_error_code) {
+    return "(no error)";
+  }
+
+  return std::format("{:#x}", *app_error_code);
 }
 
 } // namespace util

@@ -35,7 +35,7 @@
 #include <deque>
 #include <string_view>
 #include <memory>
-#include <span>
+#include "cxxcompat.h"
 #include <optional>
 
 #include <ngtcp2/ngtcp2.h>

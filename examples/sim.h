@@ -32,7 +32,7 @@
 #include <functional>
 #include <chrono>
 #include <queue>
-#include <span>
+#include "cxxcompat.h"
 #include <random>
 #include <optional>
 
@@ -46,7 +46,7 @@
 #include "shared.h"
 
 namespace ngtcp2 {
-inline constexpr auto MAX_UDP_PAYLOAD_SIZE = 1500UZ;
+inline constexpr auto MAX_UDP_PAYLOAD_SIZE = 1500U;
 
 using Timestamp =
   std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds>;

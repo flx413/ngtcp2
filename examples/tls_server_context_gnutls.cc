@@ -73,13 +73,13 @@ std::expected<void, Error> TLSServerContext::init(const char *private_key_file,
   if (auto rv = gnutls_certificate_allocate_credentials(&cred_); rv != 0) {
     std::println(stderr, "gnutls_certificate_allocate_credentials failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (auto rv = gnutls_certificate_set_x509_system_trust(cred_); rv < 0) {
     std::println(stderr, "gnutls_certificate_set_x509_system_trust failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (auto rv = gnutls_certificate_set_x509_key_file(
@@ -87,14 +87,14 @@ std::expected<void, Error> TLSServerContext::init(const char *private_key_file,
       rv != 0) {
     std::println(stderr, "gnutls_certificate_set_x509_key_file failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (auto rv = gnutls_session_ticket_key_generate(&session_ticket_key_);
       rv != 0) {
     std::println(stderr, "gnutls_session_ticket_key_generate failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   return {};

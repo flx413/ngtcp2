@@ -91,13 +91,13 @@ std::expected<void, Error> TLSClientContext::init(const char *private_key_file,
   if (!ssl_ctx_) {
     std::println(stderr, "SSL_CTX_new: {}",
                  ERR_error_string(ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (ngtcp2_crypto_quictls_configure_client_context(ssl_ctx_) != 0) {
     std::println(stderr,
                  "ngtcp2_crypto_quictls_configure_client_context failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   SSL_CTX_set_default_verify_paths(ssl_ctx_);
@@ -105,12 +105,12 @@ std::expected<void, Error> TLSClientContext::init(const char *private_key_file,
   if (SSL_CTX_set_ciphersuites(ssl_ctx_, config.ciphers) != 1) {
     std::println(stderr, "SSL_CTX_set_ciphersuites: {}",
                  ERR_error_string(ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (SSL_CTX_set1_groups_list(ssl_ctx_, config.groups) != 1) {
     std::println(stderr, "SSL_CTX_set1_groups_list failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (private_key_file && cert_file) {
@@ -118,13 +118,13 @@ std::expected<void, Error> TLSClientContext::init(const char *private_key_file,
                                     SSL_FILETYPE_PEM) != 1) {
       std::println(stderr, "SSL_CTX_use_PrivateKey_file: {}",
                    ERR_error_string(ERR_get_error(), nullptr));
-      return std::unexpected{Error::CRYPTO};
+      return std::cxx17::unexpected{Error::CRYPTO};
     }
 
     if (SSL_CTX_use_certificate_chain_file(ssl_ctx_, cert_file) != 1) {
       std::println(stderr, "SSL_CTX_use_certificate_chain_file: {}",
                    ERR_error_string(ERR_get_error(), nullptr));
-      return std::unexpected{Error::CRYPTO};
+      return std::cxx17::unexpected{Error::CRYPTO};
     }
   }
 

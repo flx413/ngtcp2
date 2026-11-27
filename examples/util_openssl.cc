@@ -27,7 +27,7 @@
 #include <cassert>
 #include <array>
 #include <algorithm>
-#include <expected>
+#include "cxxcompat.h"
 #include <filesystem>
 
 #include <ngtcp2/ngtcp2_crypto.h>
@@ -51,7 +51,7 @@ std::expected<void, Error> generate_secure_random(std::span<uint8_t> data) {
 #endif // !defined(WITH_EXAMPLE_BORINGSSL)
 
   if (RAND_bytes(data.data(), static_cast<size_type>(data.size())) != 1) {
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   return {};
@@ -62,7 +62,7 @@ read_hpke_private_key_pem(const std::filesystem::path &path) {
   auto f = BIO_new_file(path.c_str(), "r");
   if (f == nullptr) {
     std::println(stderr, "Could not open file {}", path.native());
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   auto f_d = defer([f] { BIO_free(f); });
@@ -70,7 +70,7 @@ read_hpke_private_key_pem(const std::filesystem::path &path) {
   EVP_PKEY *pkey;
 
   if (PEM_read_bio_PrivateKey(f, &pkey, nullptr, nullptr) == nullptr) {
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   auto pkey_d = defer([pkey] { EVP_PKEY_free(pkey); });
@@ -92,7 +92,7 @@ read_hpke_private_key_pem(const std::filesystem::path &path) {
     break;
   }
   default:
-    return std::unexpected{Error::UNSUPPORTED};
+    return std::cxx17::unexpected{Error::UNSUPPORTED};
   }
 
   return res;
@@ -104,7 +104,7 @@ read_pem(const std::filesystem::path &path, std::string_view name,
   auto f = BIO_new_file(path.c_str(), "r");
   if (f == nullptr) {
     std::println(stderr, "Could not open {} file {}", name, path.native());
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   auto f_d = defer([f] { BIO_free(f); });
@@ -116,7 +116,7 @@ read_pem(const std::filesystem::path &path, std::string_view name,
 
     if (PEM_read_bio(f, &pem_type, &header, &data, &datalen) != 1) {
       std::println(stderr, "Could not read {} file {}", name, path.native());
-      return std::unexpected{Error::IO};
+      return std::cxx17::unexpected{Error::IO};
     }
 
     auto pem_d = defer([pem_type, header, data] {
@@ -140,7 +140,7 @@ std::expected<void, Error> write_pem(const std::filesystem::path &path,
   auto f = BIO_new_file(path.c_str(), "w");
   if (f == nullptr) {
     std::println(stderr, "Could not write {} in {}", name, path.native());
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   PEM_write_bio(f, type.data(), "", data.data(),

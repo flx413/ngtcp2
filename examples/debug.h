@@ -36,7 +36,7 @@
 
 #include <cinttypes>
 #include <string_view>
-#include <span>
+#include "cxxcompat.h"
 
 #include <ngtcp2/ngtcp2.h>
 #include <nghttp3/nghttp3.h>

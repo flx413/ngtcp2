@@ -46,13 +46,13 @@ std::expected<void, Error> TLSClientContext::init(const char *private_key_file,
   if (auto rv = gnutls_certificate_allocate_credentials(&cred_); rv != 0) {
     std::println(stderr, "gnutls_certificate_allocate_credentials failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (auto rv = gnutls_certificate_set_x509_system_trust(cred_); rv < 0) {
     std::println(stderr, "gnutls_certificate_set_x509_system_trust failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (private_key_file != nullptr && cert_file != nullptr) {
@@ -61,7 +61,7 @@ std::expected<void, Error> TLSClientContext::init(const char *private_key_file,
         rv != 0) {
       std::println(stderr, "gnutls_certificate_set_x509_key_file failed: {}",
                    gnutls_strerror(rv));
-      return std::unexpected{Error::CRYPTO};
+      return std::cxx17::unexpected{Error::CRYPTO};
     }
   }
 

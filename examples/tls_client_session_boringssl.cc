@@ -47,7 +47,7 @@ TLSClientSession::init(bool &early_data_enabled,
   if (!ssl_) {
     std::println(stderr, "SSL_new: {}",
                  ERR_error_string(ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   SSL_set_app_data(ssl_, client->conn_ref());
@@ -101,7 +101,7 @@ TLSClientSession::init(bool &early_data_enabled,
                                config.ech_config_list.size()) != 1) {
     std::println(stderr, "Could not set ECHConfigList: {}",
                  ERR_error_string(ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   return {};
@@ -123,13 +123,13 @@ std::expected<void, Error> TLSClientSession::write_ech_config_list(
   SSL_get0_ech_retry_configs(ssl_, &retry_configs, &retry_configslen);
   if (retry_configslen == 0) {
     std::println(stderr, "No ECH retry configs found");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   auto f = std::ofstream(path);
 
   if (!f) {
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   f.write(reinterpret_cast<const char *>(retry_configs),
@@ -137,7 +137,7 @@ std::expected<void, Error> TLSClientSession::write_ech_config_list(
   f.close();
 
   if (!f) {
-    return std::unexpected{Error::IO};
+    return std::cxx17::unexpected{Error::IO};
   }
 
   return {};

@@ -48,14 +48,14 @@ TLSClientSession::init(bool &early_data_enabled,
   if (!ssl) {
     std::println(stderr, "SSL_new: {}",
                  ERR_error_string(ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   ngtcp2_crypto_ossl_ctx_set_ssl(ossl_ctx_, ssl);
 
   if (ngtcp2_crypto_ossl_configure_client_session(ssl) != 0) {
     std::println(stderr, "ngtcp2_crypto_ossl_configure_client_session failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   SSL_set_app_data(ssl, client->conn_ref());

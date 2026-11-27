@@ -30,7 +30,7 @@
 #endif // defined(HAVE_CONFIG_H)
 
 #include <vector>
-#include <expected>
+#include "cxxcompat.h"
 #include <optional>
 
 #include <ngtcp2/ngtcp2.h>

@@ -96,7 +96,7 @@ TLSClientSession::init(bool &early_data_enabled,
                                  GNUTLS_NO_END_OF_EARLY_DATA);
       rv != 0) {
     std::println(stderr, "gnutls_init failed: {}", gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   std::string priority = "%DISABLE_TLS13_COMPAT_MODE:";
@@ -108,7 +108,7 @@ TLSClientSession::init(bool &early_data_enabled,
       rv != 0) {
     std::println(stderr, "gnutls_priority_set_direct failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   gnutls_handshake_set_hook_function(session_, GNUTLS_HANDSHAKE_ANY,
@@ -117,7 +117,7 @@ TLSClientSession::init(bool &early_data_enabled,
   if (ngtcp2_crypto_gnutls_configure_client_session(session_) != 0) {
     std::println(stderr,
                  "ngtcp2_crypto_gnutls_configure_client_session failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (!config.session_file.empty()) {
@@ -140,7 +140,7 @@ TLSClientSession::init(bool &early_data_enabled,
           rv < 0) {
         std::println(stderr, "Could not read session in {}",
                      config.session_file.native());
-        return std::unexpected{Error::IO};
+        return std::cxx17::unexpected{Error::IO};
       }
 
       auto d_d = defer([data = d.data] { gnutls_free(data); });
@@ -149,7 +149,7 @@ TLSClientSession::init(bool &early_data_enabled,
           rv != 0) {
         std::println(stderr, "gnutls_session_set_data failed: {}",
                      gnutls_strerror(rv));
-        return std::unexpected{Error::CRYPTO};
+        return std::cxx17::unexpected{Error::CRYPTO};
       }
 
       if (!config.disable_early_data) {
@@ -165,7 +165,7 @@ TLSClientSession::init(bool &early_data_enabled,
       rv != 0) {
     std::println(stderr, "gnutls_credentials_set failed: {}",
                  gnutls_strerror(rv));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   // strip the first byte from H3_ALPN_V1

@@ -175,7 +175,7 @@ std::expected<Address, Error> msghdr_get_local_addr(msghdr *msg, int family) {
         return res;
       }
     }
-    return std::unexpected{Error::NOT_FOUND};
+    return std::cxx17::unexpected{Error::NOT_FOUND};
   case AF_INET6:
     for (auto cmsg = CMSG_FIRSTHDR(msg); cmsg; cmsg = CMSG_NXTHDR(msg, cmsg)) {
       if (cmsg->cmsg_level == IPPROTO_IPV6 && cmsg->cmsg_type == IPV6_PKTINFO) {
@@ -190,9 +190,9 @@ std::expected<Address, Error> msghdr_get_local_addr(msghdr *msg, int family) {
         return res;
       }
     }
-    return std::unexpected{Error::NOT_FOUND};
+    return std::cxx17::unexpected{Error::NOT_FOUND};
   }
-  return std::unexpected{Error::INVALID_ARGUMENT};
+  return std::cxx17::unexpected{Error::INVALID_ARGUMENT};
 }
 
 size_t msghdr_get_udp_gro(msghdr *msg) {
@@ -285,7 +285,7 @@ std::expected<void, Error> send_netlink_msg(int fd, const Address &remote_addr,
   if (nwrite == -1) {
     std::println(stderr, "sendmsg: Could not write netlink message: {}",
                  strerror(errno));
-    return std::unexpected{Error::SYSCALL};
+    return std::cxx17::unexpected{Error::SYSCALL};
   }
 
   return {};
@@ -316,7 +316,7 @@ std::expected<InAddr, Error> recv_netlink_msg(int fd, uint32_t seq) {
   if (nread == -1) {
     std::println(stderr, "recvmsg: Could not receive netlink message: {}",
                  strerror(errno));
-    return std::unexpected{Error::SYSCALL};
+    return std::cxx17::unexpected{Error::SYSCALL};
   }
 
   for (auto hdr = reinterpret_cast<nlmsghdr *>(buf.data());
@@ -325,24 +325,24 @@ std::expected<InAddr, Error> recv_netlink_msg(int fd, uint32_t seq) {
       std::println(stderr,
                    "netlink: unexpected sequence number {} while expecting {}",
                    hdr->nlmsg_seq, seq);
-      return std::unexpected{Error::INTERNAL};
+      return std::cxx17::unexpected{Error::INTERNAL};
     }
 
     if (hdr->nlmsg_flags & NLM_F_MULTI) {
       std::println(stderr, "netlink: unexpected NLM_F_MULTI flag set");
-      return std::unexpected{Error::INTERNAL};
+      return std::cxx17::unexpected{Error::INTERNAL};
     }
 
     switch (hdr->nlmsg_type) {
     case NLMSG_DONE:
       std::println(stderr, "netlink: unexpected NLMSG_DONE");
-      return std::unexpected{Error::INTERNAL};
+      return std::cxx17::unexpected{Error::INTERNAL};
     case NLMSG_NOOP:
       continue;
     case NLMSG_ERROR:
       std::println(stderr, "netlink: {}",
                    strerror(-static_cast<nlmsgerr *>(NLMSG_DATA(hdr))->error));
-      return std::unexpected{Error::INTERNAL};
+      return std::cxx17::unexpected{Error::INTERNAL};
     }
 
     auto attrlen = hdr->nlmsg_len - NLMSG_SPACE(sizeof(rtmsg));
@@ -358,7 +358,7 @@ std::expected<InAddr, Error> recv_netlink_msg(int fd, uint32_t seq) {
       case AF_INET: {
         constexpr auto in_addrlen = sizeof(in_addr);
         if (RTA_LENGTH(in_addrlen) != rta->rta_len) {
-          return std::unexpected{Error::INTERNAL};
+          return std::cxx17::unexpected{Error::INTERNAL};
         }
 
         in_addr addr;
@@ -371,7 +371,7 @@ std::expected<InAddr, Error> recv_netlink_msg(int fd, uint32_t seq) {
       case AF_INET6: {
         constexpr auto in_addrlen = sizeof(in6_addr);
         if (RTA_LENGTH(in_addrlen) != rta->rta_len) {
-          return std::unexpected{Error::INTERNAL};
+          return std::cxx17::unexpected{Error::INTERNAL};
         }
 
         in6_addr addr;
@@ -391,7 +391,7 @@ std::expected<InAddr, Error> recv_netlink_msg(int fd, uint32_t seq) {
   }
 
   if (in_addr_empty(ia)) {
-    return std::unexpected{Error::NOT_FOUND};
+    return std::cxx17::unexpected{Error::NOT_FOUND};
   }
 
   // Read ACK
@@ -412,7 +412,7 @@ std::expected<InAddr, Error> recv_netlink_msg(int fd, uint32_t seq) {
   if (nread == -1) {
     std::println(stderr, "recvmsg: Could not receive netlink message: {}",
                  strerror(errno));
-    return std::unexpected{Error::SYSCALL};
+    return std::cxx17::unexpected{Error::SYSCALL};
   }
 
   error = -1;
@@ -423,18 +423,18 @@ std::expected<InAddr, Error> recv_netlink_msg(int fd, uint32_t seq) {
       std::println(stderr,
                    "netlink: unexpected sequence number {} while expecting {}",
                    hdr->nlmsg_seq, seq);
-      return std::unexpected{Error::INTERNAL};
+      return std::cxx17::unexpected{Error::INTERNAL};
     }
 
     if (hdr->nlmsg_flags & NLM_F_MULTI) {
       std::println(stderr, "netlink: unexpected NLM_F_MULTI flag set");
-      return std::unexpected{Error::INTERNAL};
+      return std::cxx17::unexpected{Error::INTERNAL};
     }
 
     switch (hdr->nlmsg_type) {
     case NLMSG_DONE:
       std::println(stderr, "netlink: unexpected NLMSG_DONE");
-      return std::unexpected{Error::INTERNAL};
+      return std::cxx17::unexpected{Error::INTERNAL};
     case NLMSG_NOOP:
       continue;
     case NLMSG_ERROR:
@@ -445,12 +445,12 @@ std::expected<InAddr, Error> recv_netlink_msg(int fd, uint32_t seq) {
 
       std::println(stderr, "netlink: {}", strerror(error));
 
-      return std::unexpected{Error::INTERNAL};
+      return std::cxx17::unexpected{Error::INTERNAL};
     }
   }
 
   if (error != 0) {
-    return std::unexpected{Error::INTERNAL};
+    return std::cxx17::unexpected{Error::INTERNAL};
   }
 
   return ia;
@@ -466,7 +466,7 @@ std::expected<InAddr, Error> get_local_addr(const Address &remote_addr) {
   if (fd == -1) {
     std::println(stderr, "socket: Could not create netlink socket: {}",
                  strerror(errno));
-    return std::unexpected{Error::SYSCALL};
+    return std::cxx17::unexpected{Error::SYSCALL};
   }
 
   auto fd_d = defer([fd] { close(fd); });
@@ -474,13 +474,13 @@ std::expected<InAddr, Error> get_local_addr(const Address &remote_addr) {
   if (bind(fd, reinterpret_cast<sockaddr *>(&sa), sizeof(sa)) == -1) {
     std::println(stderr, "bind: Could not bind netlink socket: {}",
                  strerror(errno));
-    return std::unexpected{Error::SYSCALL};
+    return std::cxx17::unexpected{Error::SYSCALL};
   }
 
   uint32_t seq = 1;
 
   if (auto rv = send_netlink_msg(fd, remote_addr, seq); !rv) {
-    return std::unexpected{rv.error()};
+    return std::cxx17::unexpected{rv.error()};
   }
 
   return recv_netlink_msg(fd, seq);

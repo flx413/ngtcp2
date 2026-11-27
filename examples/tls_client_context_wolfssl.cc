@@ -101,13 +101,13 @@ std::expected<void, Error> TLSClientContext::init(const char *private_key_file,
   if (!ssl_ctx_) {
     std::println(stderr, "wolfSSL_CTX_new: {}",
                  wolfSSL_ERR_error_string(wolfSSL_ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (ngtcp2_crypto_wolfssl_configure_client_context(ssl_ctx_) != 0) {
     std::println(stderr,
                  "ngtcp2_crypto_wolfssl_configure_client_context failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (wolfSSL_CTX_set_default_verify_paths(ssl_ctx_) ==
@@ -120,14 +120,14 @@ std::expected<void, Error> TLSClientContext::init(const char *private_key_file,
       WOLFSSL_SUCCESS) {
     std::println(stderr, "wolfSSL_CTX_set_cipher_list: {}",
                  wolfSSL_ERR_error_string(wolfSSL_ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (wolfSSL_CTX_set1_groups_list(
         ssl_ctx_, const_cast<char *>(config.groups)) != WOLFSSL_SUCCESS) {
     std::println(stderr, "wolfSSL_CTX_set1_groups_list({}) failed",
                  config.groups);
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (private_key_file && cert_file) {
@@ -135,14 +135,14 @@ std::expected<void, Error> TLSClientContext::init(const char *private_key_file,
                                         SSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
       std::println(stderr, "wolfSSL_CTX_use_PrivateKey_file: {}",
                    wolfSSL_ERR_error_string(wolfSSL_ERR_get_error(), nullptr));
-      return std::unexpected{Error::CRYPTO};
+      return std::cxx17::unexpected{Error::CRYPTO};
     }
 
     if (wolfSSL_CTX_use_certificate_chain_file(ssl_ctx_, cert_file) !=
         WOLFSSL_SUCCESS) {
       std::println(stderr, "wolfSSL_CTX_use_certificate_chain_file: {}",
                    wolfSSL_ERR_error_string(wolfSSL_ERR_get_error(), nullptr));
-      return std::unexpected{Error::CRYPTO};
+      return std::cxx17::unexpected{Error::CRYPTO};
     }
   }
 

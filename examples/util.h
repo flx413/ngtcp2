@@ -37,9 +37,7 @@
 #include <random>
 #include <unordered_map>
 #include <string_view>
-#include <span>
-#include <expected>
-#include <ranges>
+#include "cxxcompat.h"
 #include <filesystem>
 #include <optional>
 
@@ -83,9 +81,7 @@ inline nghttp3_nv make_nv_nn(std::string_view name, std::string_view value) {
 
 inline constexpr char LOWER_XDIGITS[] = "0123456789abcdef";
 
-template <std::weakly_incrementable O>
-requires(std::indirectly_writable<O, char>)
-constexpr O format_hex_uint8(uint8_t b, O result) {
+template <typename O> constexpr O format_hex_uint8(uint8_t b, O result) {
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsign-conversion"
@@ -103,9 +99,11 @@ constexpr O format_hex_uint8(uint8_t b, O result) {
 // stores the result in another range, beginning at |result|.  It
 // returns an output iterator to the element past the last element
 // stored.
-template <std::input_iterator I, std::weakly_incrementable O>
-requires(std::indirectly_writable<O, char> &&
-         sizeof(std::iter_value_t<I>) == sizeof(uint8_t))
+template <typename I, typename O,
+          typename std::enable_if<
+            sizeof(typename std::iterator_traits<I>::value_type) ==
+              sizeof(uint8_t),
+            int>::type = 0>
 constexpr O format_hex(I first, I last, O result) {
   for (; first != last; ++first) {
     result = format_hex_uint8(static_cast<uint8_t>(*first), result);
@@ -118,30 +116,24 @@ constexpr O format_hex(I first, I last, O result) {
 // and stores the result in another range, beginning at |result|.  It
 // returns an output iterator to the element past the last element
 // stored.
-template <std::input_iterator I, std::weakly_incrementable O>
-requires(std::indirectly_writable<O, char> &&
-         sizeof(std::iter_value_t<I>) == sizeof(uint8_t))
-constexpr O format_hex(I first, std::iter_difference_t<I> n, O result) {
-  return format_hex(first, std::ranges::next(first, n), std::move(result));
+template <typename I, typename N, typename O,
+          typename std::enable_if<std::is_integral<N>::value, int>::type = 0>
+constexpr O format_hex(I first, N n, O result) {
+  return format_hex(first, std::next(first, n), std::move(result));
 }
 
 // format_hex converts a range [|first|, |first| + |n|) in hex format,
 // and returns it.
-template <std::input_iterator I>
-requires(sizeof(std::iter_value_t<I>) == sizeof(uint8_t))
-constexpr std::string format_hex(I first, std::iter_difference_t<I> n) {
+template <typename I, typename N,
+          typename std::enable_if<std::is_integral<N>::value, int>::type = 0>
+std::string format_hex(I first, N n) {
   if (n <= 0) {
     return {};
   }
 
-  std::string res;
+  std::string res(as_unsigned(static_cast<size_t>(n) * 2), '\0');
 
-  res.resize_and_overwrite(as_unsigned(n * 2), [first = std::move(first),
-                                                n](auto p, auto len) mutable {
-    format_hex(std::move(first), n, p);
-
-    return len;
-  });
+  format_hex(first, n, res.data());
 
   return res;
 }
@@ -149,28 +141,28 @@ constexpr std::string format_hex(I first, std::iter_difference_t<I> n) {
 // format_hex converts |R| in hex format, and stores the result in
 // another range, beginning at |result|.  It returns an output
 // iterator to the element past the last element stored.
-template <std::ranges::input_range R, std::weakly_incrementable O>
-requires(std::indirectly_writable<O, char> &&
-         !std::is_array_v<std::remove_cvref_t<R>> &&
-         sizeof(std::ranges::range_value_t<R>) == sizeof(uint8_t))
+template <typename R, typename O,
+          typename std::enable_if<
+            !std::is_integral<typename std::remove_reference<R>::type>::value &&
+              !std::is_integral<
+                typename std::remove_reference<O>::type>::value &&
+              !std::is_array<typename std::remove_reference<R>::type>::value,
+            int>::type = 0>
 constexpr O format_hex(R &&r, O result) {
-  return format_hex(std::ranges::begin(r), std::ranges::end(r),
-                    std::move(result));
+  return format_hex(std::begin(r), std::end(r), std::move(result));
 }
 
 // format_hex converts |R| in hex format, and returns the result.
-template <std::ranges::forward_range R>
-requires(!std::is_array_v<std::remove_cvref_t<R>> &&
-         sizeof(std::ranges::range_value_t<R>) == sizeof(uint8_t))
-constexpr std::string format_hex(R &&r) {
-  std::string res;
+template <typename R,
+          typename std::enable_if<
+            !std::is_integral<typename std::remove_reference<R>::type>::value &&
+              !std::is_array<typename std::remove_reference<R>::type>::value,
+            int>::type = 0>
+std::string format_hex(R &&r) {
+  auto n = std::distance(std::begin(r), std::end(r));
+  std::string res(as_unsigned(static_cast<size_t>(n)) * 2, '\0');
 
-  res.resize_and_overwrite(as_unsigned(std::ranges::distance(r) * 2),
-                           [&r](auto p, auto len) {
-                             format_hex(r, p);
-
-                             return len;
-                           });
+  format_hex(r, res.data());
 
   return res;
 }
@@ -178,8 +170,10 @@ constexpr std::string format_hex(R &&r) {
 // format_hex converts |n| in hex format, and stores the result in
 // another range, beginning at |result|.  It returns an output
 // iterator to the element past the last element stored.
-template <std::unsigned_integral T, std::weakly_incrementable O>
-requires(std::indirectly_writable<O, char>)
+template <typename T, typename O,
+          typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value,
+                                  int>::type = 0>
 constexpr O format_hex(T n, O result) {
   if constexpr (sizeof(n) == 1) {
     return format_hex_uint8(n, result);
@@ -205,14 +199,14 @@ constexpr O format_hex(T n, O result) {
 }
 
 // format_hex converts |n| in hex format, and returns it.
-template <std::unsigned_integral T> constexpr std::string format_hex(T n) {
-  std::string res;
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value,
+                                  int>::type = 0>
+std::string format_hex(T n) {
+  std::string res(sizeof(n) * 2, '\0');
 
-  res.resize_and_overwrite(sizeof(n) * 2, [n](auto p, auto len) {
-    format_hex(n, p);
-
-    return len;
-  });
+  format_hex(n, res.data());
 
   return res;
 }
@@ -247,7 +241,7 @@ std::expected<void, Error> hexdump(FILE *out, std::span<T, N> data) {
 }
 
 inline constexpr auto lowcase_tbl = [] {
-  std::array<char, 256> tbl;
+  std::array<char, 256> tbl{};
 
   for (size_t i = 0; i < 256; ++i) {
     if ('A' <= i && i <= 'Z') {
@@ -301,7 +295,7 @@ std::expected<std::unordered_map<std::string, std::string>, Error>
 read_mime_types(const std::filesystem::path &filename);
 
 inline constexpr auto count_digit_tbl = [] {
-  std::array<uint64_t, std::numeric_limits<uint64_t>::digits10> tbl;
+  std::array<uint64_t, std::numeric_limits<uint64_t>::digits10> tbl{};
 
   uint64_t x = 1;
 
@@ -318,7 +312,11 @@ inline constexpr auto count_digit_tbl = [] {
 //
 // credit:
 // https://lemire.me/blog/2025/01/07/counting-the-digits-of-64-bit-integers/
-template <std::unsigned_integral T> constexpr size_t count_digit(T x) {
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value,
+                                  int>::type = 0>
+constexpr size_t count_digit(T x) {
   auto y = static_cast<size_t>(19 * (std::numeric_limits<T>::digits - 1 -
                                      std::countl_zero(static_cast<T>(x | 1))) >>
                                6);
@@ -329,7 +327,7 @@ template <std::unsigned_integral T> constexpr size_t count_digit(T x) {
 }
 
 inline constexpr auto utos_digits = [] {
-  std::array<char, 200> a;
+  std::array<char, 200> a{};
 
   for (size_t i = 0; i < 100; ++i) {
     a[i * 2] = '0' + static_cast<char>(i / 10);
@@ -340,10 +338,12 @@ inline constexpr auto utos_digits = [] {
 }();
 
 struct UIntFormatter {
-  template <std::unsigned_integral T, std::weakly_incrementable O>
-  requires(std::indirectly_writable<O, char>)
+  template <typename T, typename O,
+            typename std::enable_if<std::is_integral<T>::value &&
+                                      std::is_unsigned<T>::value,
+                                    int>::type = 0>
   constexpr O operator()(T n, O result) {
-    using result_type = std::iter_value_t<O>;
+    using result_type = typename std::iterator_traits<O>::value_type;
 
     if (n < 10) {
       *result++ = static_cast<result_type>('0' + static_cast<char>(n));
@@ -351,16 +351,16 @@ struct UIntFormatter {
     }
 
     if (n < 100) {
-      return std::ranges::copy_n(utos_digits.data() + n * 2, 2, result).out;
+      return std::copy_n(utos_digits.data() + n * 2, 2, result);
     }
 
-    std::ranges::advance(result, as_signed(count_digit(n)));
+    std::advance(result, as_signed(count_digit(n)));
 
     auto p = result;
 
     for (; n >= 100; n /= 100) {
-      std::ranges::advance(p, -2);
-      std::ranges::copy_n(utos_digits.data() + (n % 100) * 2, 2, p);
+      std::advance(p, -2);
+      std::copy_n(utos_digits.data() + (n % 100) * 2, 2, p);
     }
 
     if (n < 10) {
@@ -368,34 +368,36 @@ struct UIntFormatter {
       return result;
     }
 
-    std::ranges::advance(p, -2);
-    std::ranges::copy_n(utos_digits.data() + n * 2, 2, p);
+    std::advance(p, -2);
+    std::copy_n(utos_digits.data() + n * 2, 2, p);
 
     return result;
   }
 };
 
-template <std::unsigned_integral T, std::weakly_incrementable O>
-requires(std::indirectly_writable<O, char>)
+template <typename T, typename O,
+          typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value,
+                                  int>::type = 0>
 constexpr O utos(T n, O result) {
   return UIntFormatter{}(std::move(n), std::move(result));
 }
 
 // format_uint converts |n| into string.
-template <std::unsigned_integral T> constexpr std::string format_uint(T n) {
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value,
+                                  int>::type = 0>
+std::string format_uint(T n) {
   using namespace std::literals;
 
   if (n == 0) {
     return "0"s;
   }
 
-  std::string res;
+  std::string res(count_digit(n), '\0');
 
-  res.resize_and_overwrite(count_digit(n), [n](auto p, auto len) {
-    utos(n, p);
-
-    return len;
-  });
+  utos(n, res.data());
 
   return res;
 }
@@ -403,7 +405,11 @@ template <std::unsigned_integral T> constexpr std::string format_uint(T n) {
 // format_uint_iec converts |n| into string with the IEC unit (either
 // "G", "M", or "K").  It chooses the largest unit which does not drop
 // precision.
-template <std::unsigned_integral T> std::string format_uint_iec(T n) {
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value &&
+                                    std::is_unsigned<T>::value,
+                                  int>::type = 0>
+std::string format_uint_iec(T n) {
   if (n >= (1 << 30) && (n & ((1 << 30) - 1)) == 0) {
     return format_uint(n / (1 << 30)) + 'G';
   }
@@ -447,9 +453,8 @@ std::expected<void, Error> generate_secure_random(std::span<uint8_t> data);
 // it cannot consume a previous path component, it just removes "..".
 std::expected<std::string, Error> normalize_path(std::string_view path);
 
-template <std::predicate<size_t> Pred>
-consteval auto pred_tbl_gen256(Pred pred) {
-  std::array<bool, 256> tbl;
+template <typename Pred> constexpr auto pred_tbl_gen256(Pred pred) {
+  std::array<bool, 256> tbl{};
 
   for (size_t i = 0; i < tbl.size(); ++i) {
     tbl[i] = pred(i);
@@ -458,7 +463,7 @@ consteval auto pred_tbl_gen256(Pred pred) {
   return tbl;
 }
 
-consteval auto digit_pred(size_t i) noexcept { return '0' <= i && i <= '9'; }
+constexpr auto digit_pred(size_t i) noexcept { return '0' <= i && i <= '9'; }
 
 inline constexpr auto is_digit_tbl = pred_tbl_gen256(digit_pred);
 
@@ -466,7 +471,7 @@ constexpr bool is_digit(char c) noexcept {
   return is_digit_tbl[static_cast<uint8_t>(c)];
 }
 
-consteval auto hex_digit_pred(size_t i) noexcept {
+constexpr auto hex_digit_pred(size_t i) noexcept {
   return digit_pred(i) || ('A' <= i && i <= 'F') || ('a' <= i && i <= 'f');
 }
 
@@ -479,16 +484,21 @@ constexpr bool is_hex_digit(char c) noexcept {
 // is_hex_string returns true if the length of |s| is even, and |s|
 // does not contain a character other than [0-9A-Fa-f].  It returns
 // false otherwise.
-template <std::ranges::sized_range R>
-requires(!std::is_array_v<std::remove_cvref_t<R>>)
+template <typename R,
+          typename std::enable_if<
+            !std::is_array<typename std::remove_reference<R>::type>::value,
+            int>::type = 0>
 constexpr bool is_hex_string(R &&r) {
-  return !(std::ranges::size(r) & 1) && std::ranges::all_of(r, is_hex_digit);
+  return !(std::size(r) & 1) &&
+         std::all_of(std::begin(r), std::end(r), is_hex_digit);
 }
 
 inline constexpr auto hex_to_uint_tbl = [] {
-  std::array<uint32_t, 256> tbl;
+  std::array<uint32_t, 256> tbl{};
 
-  std::ranges::fill(tbl, 256);
+  for (auto &v : tbl) {
+    v = 256;
+  }
 
   for (char i = '0'; i <= '9'; ++i) {
     tbl[static_cast<uint8_t>(i)] = static_cast<uint32_t>(i - '0');
@@ -536,11 +546,28 @@ const char *crypto_default_groups();
 // split_str parses delimited strings in |s| and returns substrings
 // delimited by |delim|.  The any white spaces around substring are
 // treated as a part of substring.  If |s| is an empty string, this
-// function returns an empty view.
-inline auto split_str(std::string_view s, char delim = ',') {
-  return s | std::ranges::views::split(delim) |
-         std::ranges::views::transform(
-           [](auto &&r) { return std::string_view{r}; });
+// function returns an empty vector.
+inline std::vector<std::string_view> split_str(std::string_view s,
+                                               char delim = ',') {
+  std::vector<std::string_view> res;
+
+  if (s.empty()) {
+    return res;
+  }
+
+  size_t pos = 0;
+
+  for (;;) {
+    auto d = s.find(delim, pos);
+
+    if (d == std::string_view::npos) {
+      res.push_back(s.substr(pos));
+      return res;
+    }
+
+    res.push_back(s.substr(pos, d - pos));
+    pos = d + 1;
+  }
 }
 
 // parse_version parses |s| to get 4 byte QUIC version.  |s| must be a
@@ -609,8 +636,8 @@ std::ostream &operator<<(std::ostream &os, const ngtcp2_cid &cid);
 namespace std {
 template <> struct hash<ngtcp2_cid> {
   hash() {
-    std::ranges::copy(ngtcp2::util::generate_siphash_key(),
-                      std::ranges::begin(key));
+    auto k = ngtcp2::util::generate_siphash_key();
+    std::copy(k.begin(), k.end(), key.begin());
   }
 
   std::size_t operator()(const ngtcp2_cid &cid) const noexcept {
@@ -625,19 +652,16 @@ inline bool operator==(const ngtcp2_cid &lhs, const ngtcp2_cid &rhs) {
   return ngtcp2_cid_eq(&lhs, &rhs);
 }
 
-template <>
-struct std::formatter<ngtcp2_cid> : public std::formatter<std::string_view> {
-  template <typename FormatContext>
-  auto format(const ngtcp2_cid &cid, FormatContext &ctx) const {
+template <> struct std::formatter<ngtcp2_cid> {
+  std::string format(const ngtcp2_cid &cid, std::string_view = {}) const {
     std::array<char, NGTCP2_MAX_CIDLEN * 2 + 2> buf;
     buf[0] = '0';
     buf[1] = 'x';
 
     auto end = ngtcp2::util::format_hex(std::span{cid.data, cid.datalen},
-                                        std::ranges::begin(buf) + 2);
+                                        buf.begin() + 2);
 
-    return std::formatter<std::string_view>::format(
-      {std::ranges::begin(buf), end}, ctx);
+    return std::string(buf.data(), end);
   }
 };
 

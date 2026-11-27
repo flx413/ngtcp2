@@ -147,13 +147,13 @@ std::expected<void, Error> TLSServerContext::init(const char *private_key_file,
   if (!ssl_ctx_) {
     std::println(stderr, "wolfSSL_CTX_new: {}",
                  wolfSSL_ERR_error_string(wolfSSL_ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (ngtcp2_crypto_wolfssl_configure_server_context(ssl_ctx_) != 0) {
     std::println(stderr,
                  "ngtcp2_crypto_wolfssl_configure_server_context failed");
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
 #ifdef WOLFSSL_EARLY_DATA
@@ -169,14 +169,14 @@ std::expected<void, Error> TLSServerContext::init(const char *private_key_file,
   if (wolfSSL_CTX_set_cipher_list(ssl_ctx_, config.ciphers) != 1) {
     std::println(stderr, "wolfSSL_CTX_set_cipher_list: {}",
                  ERR_error_string(ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (wolfSSL_CTX_set1_groups_list(ssl_ctx_,
                                    const_cast<char *>(config.groups)) != 1) {
     std::println(stderr, "wolfSSL_CTX_set1_groups_list({}) failed",
                  config.groups);
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   wolfSSL_CTX_set_mode(ssl_ctx_, SSL_MODE_RELEASE_BUFFERS);
@@ -196,19 +196,19 @@ std::expected<void, Error> TLSServerContext::init(const char *private_key_file,
                                       SSL_FILETYPE_PEM) != 1) {
     std::println(stderr, "wolfSSL_CTX_use_PrivateKey_file: {}",
                  wolfSSL_ERR_error_string(wolfSSL_ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (wolfSSL_CTX_use_certificate_chain_file(ssl_ctx_, cert_file) != 1) {
     std::println(stderr, "wolfSSL_CTX_use_certificate_chain_file: {}",
                  wolfSSL_ERR_error_string(wolfSSL_ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   if (wolfSSL_CTX_check_private_key(ssl_ctx_) != 1) {
     std::println(stderr, "wolfSSL_CTX_check_private_key: {}",
                  wolfSSL_ERR_error_string(wolfSSL_ERR_get_error(), nullptr));
-    return std::unexpected{Error::CRYPTO};
+    return std::cxx17::unexpected{Error::CRYPTO};
   }
 
   wolfSSL_CTX_set_session_id_context(ssl_ctx_, sid_ctx, sizeof(sid_ctx) - 1);

@@ -94,7 +94,7 @@ ProtoCodec::recv_stream_data(uint32_t flags, int64_t stream_id,
         std::println(stderr, "ngtcp2_conn_shutdown_stream: {}",
                      ngtcp2_strerror(rv));
         ngtcp2_ccerr_set_liberr(&last_error_, NGTCP2_ERR_INTERNAL, nullptr, 0);
-        return std::unexpected{Error::QUIC};
+        return std::cxx17::unexpected{Error::QUIC};
       }
     }
   }
